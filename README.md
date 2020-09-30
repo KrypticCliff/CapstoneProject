@@ -1,1 +1,1 @@
-echo "# DataExchange" >> README.md
+# DataExchange
