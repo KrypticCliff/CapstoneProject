@@ -6,12 +6,19 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#define LOCALPORT   "8333"
+#define BACKLOG     3
+
 int main(int argc, char* argv[])
 {
     int status;
     int sfd;
+    int client_sfd;
+    socklen_t addr_size;
     char ip[INET_ADDRSTRLEN];
     struct addrinfo addr, *res;
+
+    struct sockaddr_storage client_addr;
 
     // Set addr struct to 0
     memset(&addr, 0, sizeof(addr));
@@ -20,43 +27,24 @@ int main(int argc, char* argv[])
     addr.ai_flags       = AI_PASSIVE;   // Use Current IP of Host
 
     // Sets up structure for HOST IP address
-    status = getaddrinfo(NULL, "8333", &addr, &res);
+    status = getaddrinfo(NULL, LOCALPORT, &addr, &res);
     
     if (status != 0)
     {
         fprintf(stderr, "An error has occurred: %s\n", gai_strerror(status));
         exit(EXIT_FAILURE);
     }
-
-    sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-    bind(sfd, res->ai_addr, res->ai_addrlen);
-
-    // Creates Socket File Descriptor from Addr setup
-    //int sfd = socket(addr.ai_family, addr.ai_socktype, addr.ai_protocol);
-
-    // Checks if there are more IP addresses connected to this host (DNS Lookup)    
-
-
-/*
-    for (s = res; s != NULL; s = s->ai_next)
-    {
-        int sfd = socket(s->ai_family, s->ai_socktype, s->ai_protocol);
-        struct sockaddr_in *saddr = (struct sockaddr_in *) s->ai_addr;
-        int port = ntohs(saddr->sin_port);
-
-        inet_ntop(res->ai_family, &saddr->sin_addr, ip, INET_ADDRSTRLEN);
-
-        if (sfd < 0)
-        {
-            fprintf(stderr, "An Error Has Occurred with the File Descriptor");
-        }
-
-        printf("Current Setup:\nIP:%s\nPort:%d\n", ip, port);
-    }
-*/
-    //while (true)    
     
+    // Initializes Socket File Descriptor *Create Err Check*
+    sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    
+    // Returns 0 on success, -1 on err *Create Err Check*
+    bind(sfd, res->ai_addr, res->ai_addrlen);
+    listen(sfd, BACKLOG);
+    
+    addr_size = sizeof(client_addr);
+    client_sfd = accept(sfd, (struct sockaddr *) &client_sfd, &addr_size);
+
     freeaddrinfo(res);
     return 0;
 }
