@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -7,18 +8,17 @@
 #include <unistd.h>
 
 #define LOCALPORT       "8333"
+#define MAXDATASIZE     100
 
 int main(int argc, char* argv[])
 {
     int sfd;
     int status;
 
-    struct addrinfo hints, *res;
+    char buffer[MAXDATASIZE];
+    int len, bytes_sent;
 
-    hints.ai_flags      = 0;
-    hints.ai_protocol   = 0;
-    hints.ai_family     = AF_INET;
-    hints.ai_socktype   = SOCK_STREAM;
+    struct addrinfo hints, *res;
 
     // Check if IP was included. Close is not
     if (argc != 2)
@@ -27,9 +27,12 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    status = getaddrinfo(argv[1], LOCALPORT, &hints, &res);
+    hints.ai_flags      = 0;
+    hints.ai_protocol   = 0;
+    hints.ai_family     = AF_INET;
+    hints.ai_socktype   = SOCK_STREAM;
 
-    if (status != 0)
+    if ((status = getaddrinfo(argv[1], LOCALPORT, &hints, &res)) != 0)
     {
         fprintf(stderr, "An error has occurred: %s\n", gai_strerror(status));
         exit(EXIT_FAILURE);
@@ -37,15 +40,20 @@ int main(int argc, char* argv[])
 
     sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-    bind(sfd, res->ai_addr, res->ai_addrlen);
-
-    std::cout << "TEST***\n";
-    
     if (connect(sfd, res->ai_addr, res->ai_addrlen) == -1)
     {
         close(sfd);
-        //printf("Connecting...\n");
+        perror("Client Connect");
     }
-
+    
     freeaddrinfo(res);
+
+    if ((bytes_sent = recv(sfd, buffer, MAXDATASIZE-1, 0)) == -1)
+    {
+        perror("Receive");
+        exit(1);
+    }
+    
+    buffer[bytes_sent] = '\0';
+    printf("Received: %s\n", buffer);
 }
