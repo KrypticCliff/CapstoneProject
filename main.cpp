@@ -1,25 +1,44 @@
 #include <iostream>
 #include <cstring>
+#include <cstdio>
 
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/select.h>
+
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <signal.h>
+
 
 #define MAXBUFFSIZE 100
 #define LOCALPORT   "8333"
 #define BACKLOG     3
+
+void sigchld_handler(int s)
+{
+    int saved_errno = errno;
+    
+    while(waitpid(-1, NULL, WNOHANG) > 0);
+
+    errno = saved_errno;
+}
 
 int main(int argc, char* argv[])
 {
     int status;
     int sfd;
     int client_sfd;
-    socklen_t addr_size;
+    int optval = 1;
     char buff[MAXBUFFSIZE];
-    char ip[INET_ADDRSTRLEN];
-    struct addrinfo addr, *res;
+    char ip[INET_ADDRSTRLEN];    
+    bool socket_closed = false;
+    socklen_t addr_size;
 
+    struct addrinfo addr, *res, *a;
+    struct sigaction sa;
     struct sockaddr_storage client_addr;
 
     // Set addr struct to 0
@@ -27,41 +46,93 @@ int main(int argc, char* argv[])
     addr.ai_family      = AF_INET;      // IP4
     addr.ai_socktype    = SOCK_STREAM;  // TCP Stream
     addr.ai_flags       = AI_PASSIVE;   // Use Current IP of Host
+    addr.ai_protocol    = 0;
 
     // Sets up structure for HOST IP address
-    status = getaddrinfo(NULL, LOCALPORT, &addr, &res);
-    
-    if (status != 0)
+    if ((status = getaddrinfo(NULL, LOCALPORT, &addr, &res)) != 0)
     {
-        fprintf(stderr, "An error has occurred: %s\n", gai_strerror(status));
-        exit(EXIT_FAILURE);
-    }
-    
-    // Initializes Socket File Descriptor *Create Err Check*
-    sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    
-    // Returns 0 on success, -1 on err *Create Err Check*
-    bind(sfd, res->ai_addr, res->ai_addrlen);
-    listen(sfd, BACKLOG);
-    
-    // addr_size = sizeof(client_addr);
-    // Blocking - Accepts incoming connection
-    client_sfd = accept(sfd, (struct sockaddr *) &client_sfd, (socklen_t *) sizeof(client_addr));
-
-    if (client_sfd != 0)
-    {
-        fprintf(stderr, "An error has occurred: Socket Accept Failed\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        return -1;
     }
 
-    while (true)
+    for (a = res; a != NULL; a = a->ai_next)
     {
-        int datasize = recv(client_sfd, buff, MAXBUFFSIZE-1, 0);
+        // Initializes Socket File Descriptor *Create Err Check*
+        if ((sfd = socket(a->ai_family, a->ai_socktype, a->ai_protocol)) == -1)
+        {
+            perror("server socket issue");
+            continue;
+        }
 
-        for (int i = 0; i < datasize-1; i++)
-            printf("%c", buff[i]);
+        if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
+        {
+            perror("setsockopt");
+            exit(1);
+        }
+
+        // Returns 0 on success, -1 on err *Create Err Check*
+        if (bind(sfd, res->ai_addr, res->ai_addrlen) == -1)
+        {
+            close(sfd);
+            perror("Service Bind Error");
+            continue;
+        }
+
+        break;
     }
-
+    
+    // Free up the res address
     freeaddrinfo(res);
+    
+    if (a == NULL)
+    {
+        fprintf(stderr, "Server failed to bind address");
+        exit(1);
+    }
+
+    if (listen(sfd, BACKLOG) == -1)
+    {
+        perror("listen error");
+        exit(1);
+    }
+   
+    sa.sa_handler = sigchld_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGCHLD, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        exit(1);
+    }
+ 
+    // Blocking - Accepts incoming connection
+    addr_size = sizeof(client_addr);
+    client_sfd = accept(sfd, (struct sockaddr *) &client_addr, &addr_size);
+
+    if (client_sfd == -1)
+    {
+        perror("accept error");
+        exit(1);
+    }
+
+    //inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), ip, sizeof(ip));
+    //printf("Server Connected to: %s\n", ip);
+    close(sfd);
+
+    while(1)
+    {
+        char msg[12];
+        fgets(msg, 12, stdin);
+        
+//        printf("The ALL MIGHTY Server says %s", msg);
+
+        if (send(client_sfd, msg, 12, 0) == -1)
+        {
+            perror("Send");
+            exit(0);
+        }
+    }
+    close(client_sfd);
     return 0;
 }
