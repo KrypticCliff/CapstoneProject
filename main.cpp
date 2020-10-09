@@ -1,9 +1,11 @@
 #include <iostream>
 #include <cstring>
+#include <cstdio>
 
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/select.h>
 
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -32,6 +34,7 @@ int main(int argc, char* argv[])
     int optval = 1;
     char buff[MAXBUFFSIZE];
     char ip[INET_ADDRSTRLEN];    
+    bool socket_closed = false;
     socklen_t addr_size;
 
     struct addrinfo addr, *res, *a;
@@ -103,33 +106,33 @@ int main(int argc, char* argv[])
         exit(1);
     }
  
-    while(1)
+    // Blocking - Accepts incoming connection
+    addr_size = sizeof(client_addr);
+    client_sfd = accept(sfd, (struct sockaddr *) &client_addr, &addr_size);
+
+    if (client_sfd == -1)
     {
-        // Blocking - Accepts incoming connection
-        addr_size = sizeof(client_addr);
-        client_sfd = accept(sfd, (struct sockaddr *) &client_addr, &addr_size);
-
-        if (client_sfd == -1)
-        {
-            perror("accept error");
-            continue;
-        }
-
-        //inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), ip, sizeof(ip));
-        //printf("Server Connected to: %s\n", ip);
-        
-        if (!fork())
-        {
-            close(sfd);
-            
-            if (send(client_sfd, "Testing Text", 12, 0) == -1)
-                perror("Send");
-            
-            close(client_sfd);
-            exit(0);
-        }
-        close(client_sfd);    
+        perror("accept error");
+        exit(1);
     }
 
+    //inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), ip, sizeof(ip));
+    //printf("Server Connected to: %s\n", ip);
+    close(sfd);
+
+    while(1)
+    {
+        char msg[12];
+        fgets(msg, 12, stdin);
+        
+//        printf("The ALL MIGHTY Server says %s", msg);
+
+        if (send(client_sfd, msg, 12, 0) == -1)
+        {
+            perror("Send");
+            exit(0);
+        }
+    }
+    close(client_sfd);
     return 0;
 }
