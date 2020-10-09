@@ -1,9 +1,12 @@
 #include <iostream>
 #include <string.h>
+#include <stdio.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <arpa/inet.h>
+
 #include <netdb.h>
 #include <unistd.h>
 
@@ -14,11 +17,9 @@ int main(int argc, char* argv[])
 {
     int sfd;
     int status;
-
-    char buffer[MAXDATASIZE];
-    int len, bytes_sent;
-
+    int len; //, bytes_sent;
     struct addrinfo hints, *res;
+    fd_set readfd;
 
     // Check if IP was included. Close is not
     if (argc != 2)
@@ -46,14 +47,40 @@ int main(int argc, char* argv[])
         perror("Client Connect");
     }
     
-    freeaddrinfo(res);
-
-    if ((bytes_sent = recv(sfd, buffer, MAXDATASIZE-1, 0)) == -1)
-    {
-        perror("Receive");
-        exit(1);
-    }
+//    freeaddrinfo(res);
     
-    buffer[bytes_sent] = '\0';
-    printf("Received: %s\n", buffer);
+    while(1)
+    {
+        char buffer[MAXDATASIZE];
+        int bytes_sent = 0;
+        bool msg_sent = false;
+        
+        FD_ZERO(&readfd);
+        FD_SET(sfd, &readfd);
+        FD_SET(STDIN_FILENO, &readfd);
+
+        if (select(FD_SETSIZE, &readfd, NULL, NULL, NULL) < 0)
+        {
+            perror("select:");
+            exit(-1);
+        }
+        
+        if ((bytes_sent = recv(sfd, buffer, MAXDATASIZE, 0)) == -1)
+        {
+            perror("Receive");
+            exit(1);
+        }
+        else
+            msg_sent = true;
+    
+        buffer[bytes_sent] = 0;
+        
+        if (msg_sent == true)
+        {
+            printf("%s", buffer);
+            //printf("Received: %s\n", buffer);
+            msg_sent = false;
+            int bytes_sent = 0;
+        }
+    }
 }
