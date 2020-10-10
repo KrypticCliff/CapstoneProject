@@ -1,22 +1,23 @@
 #include <iostream>
-#include <cstring>
+// #include <cstring>
 #include <cstdio>
+#include <string.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/wait.h>
+// #include <sys/wait.h>
 #include <sys/select.h>
 
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <signal.h>
-
+#include <errno.h>
 
 #define MAXBUFFSIZE 100
 #define LOCALPORT   "8333"
 #define BACKLOG     3
 
+/*
 void sigchld_handler(int s)
 {
     int saved_errno = errno;
@@ -25,9 +26,98 @@ void sigchld_handler(int s)
 
     errno = saved_errno;
 }
+*/
+
 
 int main(int argc, char* argv[])
 {
+    int sfd, c_sfd;
+    int status;
+    int len;
+    //int bytes_recv;
+    
+    struct addrinfo hint, *res;
+    struct sockaddr_in address;
+    struct sockaddr_storage c_addr;
+
+    socklen_t addrlen;
+    fd_set readfd;
+
+    memset(&hint, 0, sizeof(hint));
+    hint.ai_flags    = AI_PASSIVE;
+    hint.ai_family   = AF_INET;
+    hint.ai_socktype = SOCK_STREAM;
+    //hint.ai_protocol = LOCALPORT;
+
+    // Used for DNS Lookup *Not Needed Yet*
+    if ((status = getaddrinfo(NULL, LOCALPORT, &hint, &res)) != 0)
+    {
+        fprintf(stderr, "getaddrinfo error:%s\n", gai_strerror(status));
+        exit(EXIT_FAILURE);
+    }
+
+    // Sets up Socket Descriptor
+    if ((sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+    {   
+        perror("Socket:");
+        exit(EXIT_FAILURE);
+    }
+
+    if (bind(sfd, res->ai_addr, res->ai_addrlen) < 0)
+    {
+        perror("Socket Bind:");
+        exit(EXIT_FAILURE);
+    }
+
+    // May need setsockopt() to prevent already used sockets
+    
+    if (listen(sfd, BACKLOG) < 0)
+    {
+        perror("Error on Listen:");
+        exit(EXIT_FAILURE);
+    }
+
+    addrlen = sizeof(c_addr);
+    if ((c_sfd = accept(sfd, (struct sockaddr*)&c_addr, &addrlen)) < 0)
+    {
+        close(sfd);
+        perror("Error Accepting Connection:");
+        exit(EXIT_FAILURE);    
+    }
+
+    close(sfd);
+
+    while(true)
+    {
+        char buf[MAXBUFFSIZE];
+        int bytes_recv;
+
+        FD_ZERO(&readfd);
+        FD_SET(c_sfd, &readfd);
+        FD_SET(STDIN_FILENO, &readfd);
+
+        select(FD_SETSIZE, &readfd, NULL, NULL, 0);
+        
+        bytes_recv = recv(c_sfd, buf, MAXBUFFSIZE, 0);
+
+        if (bytes_recv < 0)
+        {
+            perror("Message Receive Failed");
+            continue;
+        }
+        else if(bytes_recv == 0)
+        {
+            printf("Connection has been closed");
+            break;
+        }
+
+        buf[bytes_recv] = 0;
+        printf("%s", buf);
+    }
+    close(c_sfd);
+}
+
+/*
     int status;
     int sfd;
     int client_sfd;
@@ -55,36 +145,25 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    for (a = res; a != NULL; a = a->ai_next)
+    // Initializes Socket File Descriptor *Create Err Check*
+    if ((sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
     {
-        // Initializes Socket File Descriptor *Create Err Check*
-        if ((sfd = socket(a->ai_family, a->ai_socktype, a->ai_protocol)) == -1)
-        {
-            perror("server socket issue");
-            continue;
-        }
+        perror("server socket issue");
+        exit(-2);
+    }
 
-        if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
-        {
-            perror("setsockopt");
-            exit(1);
-        }
-
-        // Returns 0 on success, -1 on err *Create Err Check*
-        if (bind(sfd, res->ai_addr, res->ai_addrlen) == -1)
-        {
-            close(sfd);
-            perror("Service Bind Error");
-            continue;
-        }
-
-        break;
+    // Returns 0 on success, -1 on err *Create Err Check*
+    if (bind(sfd, res->ai_addr, res->ai_addrlen) == -1)
+    {
+        close(sfd);
+        perror("Service Bind Error");
+        exit(-3);
     }
     
     // Free up the res address
-    freeaddrinfo(res);
+    // freeaddrinfo(res);
     
-    if (a == NULL)
+    if (res == NULL)
     {
         fprintf(stderr, "Server failed to bind address");
         exit(1);
@@ -96,16 +175,6 @@ int main(int argc, char* argv[])
         exit(1);
     }
    
-    sa.sa_handler = sigchld_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGCHLD, &sa, NULL) == -1)
-    {
-        perror("sigaction");
-        exit(1);
-    }
- 
     // Blocking - Accepts incoming connection
     addr_size = sizeof(client_addr);
     client_sfd = accept(sfd, (struct sockaddr *) &client_addr, &addr_size);
@@ -136,3 +205,5 @@ int main(int argc, char* argv[])
     close(client_sfd);
     return 0;
 }
+
+*/
