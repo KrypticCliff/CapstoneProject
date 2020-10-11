@@ -15,6 +15,58 @@
 
 int main(int argc, char* argv[])
 {
+    int sfd, s_sfd;
+    int status;
+    int len;
+
+    struct addrinfo hint, *res;
+    
+    socklen_t addrlen;
+    fd_set readfd;
+
+    hint.ai_flags    = 0;
+    hint.ai_family   = AF_INET;
+    hint.ai_socktype = SOCK_STREAM;
+
+    if (argc != 3)
+    {
+        printf("Address and Port Needed. <IP> <Port>");
+        return -1;
+    }
+
+    memset(&hint, 0, sizeof(hint));
+    if ((status = getaddrinfo(argv[1], argv[2], &hint, &res)) != 0)
+    {
+        fprintf(stderr, "getaddrinfo Error: %s\n", gai_strerror(status));
+        exit(EXIT_FAILURE);
+    }
+
+    sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+    //printf("Connecting to Server...");
+    if (connect(sfd, res->ai_addr, res->ai_addrlen) == -1)
+    {
+        close(sfd);
+        perror("Connect Failed:");
+    }
+
+    printf("You are now connected to ... You may now chat!\n");
+
+    while(1)
+    {
+        char msg[20];
+        fgets(msg, 20, stdin);
+
+        if (send(sfd, msg, 20, 0) == -1)
+        {
+            perror("Send Fail:");
+            continue;
+        }
+    }
+    close(sfd);
+}
+/*
+{
     int sfd;
     int status;
     int len; //, bytes_sent;
@@ -84,3 +136,4 @@ int main(int argc, char* argv[])
         }
     }
 }
+*/
