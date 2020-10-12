@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
     {
         close(sfd);
         perror("Connect Failed:");
+        exit(EXIT_FAILURE);
     }
 
     printf("You are now connected to ... You may now chat!\n");
@@ -59,16 +60,30 @@ int main(int argc, char* argv[])
     while(1)
     {
         int retval;
-        char msg[20];
-        fgets(msg, 20, stdin);  // Data to STDIN
+        char msg[50];
+        fgets(msg, 50, stdin);  // Data to STDIN
 
         // Currently blocking
         // todo: Create a timeout for recv() to get output from Server*
-        if (send(sfd, msg, 20, 0) == -1)
+        retval = send(sfd, msg, 50, 0);
+        
+        if (retval == -1)
         {
             perror("Send Fail:");
             continue;
         }
+        else if (retval == 0)
+        {
+            perror("Send Disconnect:");
+            exit(EXIT_SUCCESS);
+        }
+        /*
+        if (send(sfd, msg, 50, 0) == -1)
+        {
+            perror("Send Fail:");
+            continue;
+        }
+        */
     }
     close(sfd);
 }
