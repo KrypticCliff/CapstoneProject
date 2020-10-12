@@ -27,3 +27,14 @@ https://beej.us/guide/bgnet/html/
 5. Grab the IP of Server running device. Can use `ifconfig` and locate wired or ethernet connected IP
 5. Run Client last with IP and Port number (Set to 8333)`./client 10.0.0.1 8333`
 6. Send Strings to the server from the client session.
+
+## Tasks
+- At least two variables are defined as references, or two functions use pass-by-reference in the project code.
+
+- The project accepts input from a user as part of the necessary operation of the program.
+
+- The project reads data from an external file or writes data to a file as part of the necessary operation of the program.
+
+- The project code is clearly organized into functions.
+
+- The project accepts input from a user as part of the necessary operation of the program.
