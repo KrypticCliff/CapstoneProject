@@ -4,6 +4,9 @@ This is a personal project repo for the Capstone project in the [Udacity C++ Nan
 
 The Capstone Project focuses on creating a Socket connection between 2 different devices and relays messages to the server.
 
+![ServerConnection](https://github.com/KrypticCliff/CapstoneProject/blob/master/images/Server.png)
+![ClientConnection](https://github.com/KrypticCliff/CapstoneProject/blob/master/images/Client.png)
+
 ## Further Background of Socket Creation
 "Beej's Guide to Network Programming" provides more insight on how each function play a role in establishing socket connections/
 https://beej.us/guide/bgnet/html/
