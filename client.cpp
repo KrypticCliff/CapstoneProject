@@ -63,8 +63,7 @@ int main(int argc, char* argv[])
         char msg[50];
         fgets(msg, 50, stdin);  // Data to STDIN
 
-        // Currently blocking
-        // todo: Create a timeout for recv() to get output from Server*
+        /*
         retval = send(sfd, msg, 50, 0);
         
         if (retval == -1)
@@ -77,13 +76,15 @@ int main(int argc, char* argv[])
             perror("Send Disconnect:");
             exit(EXIT_SUCCESS);
         }
-        /*
+        */
+
+        // Send currently blocking. 
+        // Takes up to 50 char per message sent
         if (send(sfd, msg, 50, 0) == -1)
         {
             perror("Send Fail:");
             continue;
         }
-        */
     }
     close(sfd);
 }
