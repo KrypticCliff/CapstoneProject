@@ -24,7 +24,7 @@ https://beej.us/guide/bgnet/html/
 2. For establishing the Server, compile: `g++ server.cpp src/SocketBuild.cpp -o server` on one device.
 3. For connecting the Client, compile: `g++ client.cpp src/SocketBuild.cpp  -o client` on the other device.
 4. Run the Server first using `./server`
-5. Grab the IP of Server running device. Can use `ifconfig` and locate wired or ethernet connected IP.
+5. Grab the IP of device running Server. Can use `ifconfig` and locate wired or ethernet connected IP.
 5. Run Client last with IP and Port number (Set to 8333)`./client 10.0.0.1 8333`
 6. Send Strings to the server from the client session.
 
