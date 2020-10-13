@@ -35,23 +35,6 @@ int main(int argc, char* argv[])
     // Sets up, configures, and create socket.
     sfd = CreateSocket(hint, res, AI_PASSIVE, NULL, LOCALPORT);
 
-/*
-    // Configures socket to prevent "Socket Not Available" Error
-    if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
-    {
-        perror("setsockopt:");
-        exit(EXIT_FAILURE);
-    }
-*/
-
-    // Binds the server info to file descriptor
-    if (bind(sfd, res->ai_addr, res->ai_addrlen) == -1)
-    {
-        close(sfd);
-        perror("Socket Bind:");
-        exit(EXIT_FAILURE);
-    }
-
     // Listen on file descriptor. Current queues 3 incomming connections
     if (listen(sfd, BACKLOG) == -1)
     {
@@ -60,6 +43,9 @@ int main(int argc, char* argv[])
     }
 
     // If connection attept succeeds, Establish connection to new file descriptor
+    c_sfd = AcceptSocket(sfd, c_addr);
+
+/*
     addrlen = sizeof(c_addr);
     if ((c_sfd = accept(sfd, (struct sockaddr*)&c_addr, &addrlen)) < 0)
     {
@@ -67,6 +53,7 @@ int main(int argc, char* argv[])
         perror("Error Accepting Connection:");
         exit(EXIT_FAILURE);    
     }
+*/
 
     // Closes original file descriptor to prevent new connections.
     close(sfd);

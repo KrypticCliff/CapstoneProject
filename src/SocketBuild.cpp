@@ -40,6 +40,16 @@ int CreateSocket(addrinfo &hint, addrinfo *&res, int flag, const char* node, con
         exit(EXIT_FAILURE);
     }
 
+    if (flag == AI_PASSIVE)
+    {
+        if (bind(sfd, res->ai_addr, res->ai_addrlen) == -1)
+        {
+            close(sfd);
+            perror("Socket Bind:");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     return sfd;
 }
 
@@ -53,7 +63,21 @@ void ConnectToServer(int sfd, addrinfo *&res)
     }
 }
 
-size_t SendMessage(int sfd, const char*& msg, size_t msize)
+int AcceptSocket(int sfd, sockaddr_storage c_addr)
+{
+    int c_sfd;
+    socklen_t addrlen = sizeof(c_sfd);
+
+    if ((c_sfd = accept(sfd, (struct sockaddr*) &c_addr, &addrlen)) < 0)
+    {
+        close(sfd);
+        perror("Error Accepting Connection:");
+        exit(EXIT_FAILURE);
+    }
+    return c_sfd;
+}
+
+size_t SendMessage(int sfd, const char* msg, size_t msize)
 {
     size_t retval;
 
@@ -64,7 +88,7 @@ size_t SendMessage(int sfd, const char*& msg, size_t msize)
     return retval;
 }
 
-/*
+/* *TESTING* Cant use within loop due to recv() blocking state
 int RecvMessage(int socket, char& buf, size_t bsize)
 {
     int count = 1;
