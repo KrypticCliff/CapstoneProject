@@ -1,18 +1,7 @@
 #include <iostream>
 #include <cstring>
-#include <cstdio>
 #include <fstream>
-#include <string.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/time.h>
-
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <unistd.h>
-#include <errno.h>
 
 #include "./include/SocketBuild.h"
 
@@ -44,12 +33,15 @@ int main(int argc, char* argv[])
         printf("Client Logging Disabled. Unable to open file.");
     }
 
+    if (log.fail())
+        throw std::ios_base::failure(std::strerror(errno));
+
     // Timeout for Select() to pick up last printf()
     tv.tv_sec   = 1;        // 1 sec
     tv.tv_usec  = 500000;   // .5 sec
 
     // Sets up, configures, and create socket.
-    sfd = CreateSocket(hint, res, AI_PASSIVE, NULL, LOCALPORT);
+    sfd = CreateSocket(hint, res, AI_PASSIVE, LOCALPORT);
 
     // Listen on file descriptor. Current queues 3 incomming connections
     if (listen(sfd, BACKLOG) == -1)
