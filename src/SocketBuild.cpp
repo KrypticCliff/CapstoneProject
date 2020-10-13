@@ -81,9 +81,12 @@ size_t SendMessage(int sfd, const char* msg, size_t msize)
 {
     size_t retval;
 
-    if ((retval = send(sfd, msg, msize, 0)) == -1)
+    retval = send(sfd, msg, msize, 0);
+
+    if (retval == -1)
         perror("Send Fail:");
-        //continue;
+    else if (retval == 0)
+        perror("Socket is closed");
 
     return retval;
 }

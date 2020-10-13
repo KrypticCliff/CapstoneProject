@@ -19,6 +19,7 @@ int main(int argc, char* argv[])
 {
     int sfd, s_sfd;
     int status;
+    int count = 1;
     int len;
 
     struct addrinfo hint, *res;
@@ -49,6 +50,18 @@ int main(int argc, char* argv[])
         // Send currently blocking. 
         // Takes up to 50 char per message sent
         retval = SendMessage(sfd, msg, 50);
+
+        // Checks if message failed 3 times or if Socket is closed
+        if (retval == -1)
+            count++;
+        else if (retval == 0)
+            break;
+        
+        if (count >= 3)
+        {
+            printf("3 Failed Messages... Timing out.");
+            break;
+        }
     }
     close(sfd);
 }
