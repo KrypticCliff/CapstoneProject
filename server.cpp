@@ -32,35 +32,17 @@ int main(int argc, char* argv[])
     socklen_t addrlen;
     fd_set readfd;
 
-    CreateSocket(hint, res, AI_PASSIVE, NULL, LOCALPORT);
+    // Sets up, configures, and create socket.
+    sfd = CreateSocket(hint, res, AI_PASSIVE, NULL, LOCALPORT);
 
-    /*
-    memset(&hint, 0, sizeof(hint));
-    hint.ai_flags    = AI_PASSIVE;
-    hint.ai_family   = AF_INET;
-    hint.ai_socktype = SOCK_STREAM;
-
-    // Set up addrinfo struct for server connection 
-    if ((status = getaddrinfo(NULL, LOCALPORT, &hint, &res)) != 0)
-    {
-        fprintf(stderr, "getaddrinfo error:%s\n", gai_strerror(status));
-        exit(EXIT_FAILURE);
-    }
-
-    // Sets up Socket File Descriptor
-    if ((sfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
-    {   
-        perror("Socket:");
-        exit(EXIT_FAILURE);
-    }
-    */
-   std::cout << sfd;
-    // Prevents "Socket Not Available" Error
+/*
+    // Configures socket to prevent "Socket Not Available" Error
     if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
     {
         perror("setsockopt:");
         exit(EXIT_FAILURE);
     }
+*/
 
     // Binds the server info to file descriptor
     if (bind(sfd, res->ai_addr, res->ai_addrlen) == -1)

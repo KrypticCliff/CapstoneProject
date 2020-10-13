@@ -14,8 +14,7 @@ int CreateSocket(addrinfo &hint, addrinfo *&res, int flag, const char* node, con
 {
     int sfd;
     int status;
-
-    //struct addrinfo hint, *res;
+    int optval = 1;
 
     memset(&hint, 0, sizeof(hint));
     hint.ai_flags       = flag;
@@ -34,6 +33,13 @@ int CreateSocket(addrinfo &hint, addrinfo *&res, int flag, const char* node, con
         perror("Socket:");
         exit(EXIT_FAILURE);
     }
+
+    if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
+    {
+        perror("setsockopt:");
+        exit(EXIT_FAILURE);
+    }
+
     return sfd;
 }
 
@@ -61,17 +67,18 @@ size_t SendMessage(int sfd, const char*& msg, size_t msize)
 /*
 int RecvMessage(int socket, char& buf, size_t bsize)
 {
-        int bytes_recv = recv(socket, buf, MAXBUFFSIZE, 0);
+    int count = 1;
+    int bytes_recv = recv(socket, buf, MAXBUFFSIZE, 0);
 
-        if (bytes_recv < 0)
-            perror("Message Receive Failed");
+    if (bytes_recv < 0)
+        perror("Message Receive Failed");
 
-        else if(bytes_recv == 0)
-        {
-            printf("Connection has been closed\n");
-            break
-        }
-
-        return bytes_recv;
+    else if(bytes_recv == 0)
+    {
+        printf("Connection has been closed\n");
+        exit(EXIT_SUCCESS);
+    }
+    
+    return bytes_recv;
 }
 */
