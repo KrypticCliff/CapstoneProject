@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "./include/SocketBuild.h"
+
 #define MAXBUFFSIZE 100
 #define LOCALPORT   "8333"
 #define BACKLOG     3
@@ -30,6 +32,9 @@ int main(int argc, char* argv[])
     socklen_t addrlen;
     fd_set readfd;
 
+    CreateSocket(hint, res, AI_PASSIVE, NULL, LOCALPORT);
+
+    /*
     memset(&hint, 0, sizeof(hint));
     hint.ai_flags    = AI_PASSIVE;
     hint.ai_family   = AF_INET;
@@ -48,7 +53,8 @@ int main(int argc, char* argv[])
         perror("Socket:");
         exit(EXIT_FAILURE);
     }
-    
+    */
+   std::cout << sfd;
     // Prevents "Socket Not Available" Error
     if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
     {
