@@ -33,12 +33,6 @@ int CreateSocket(addrinfo &hint, addrinfo *&res, int flag, const char* node, con
         exit(EXIT_FAILURE);
     }
 
-    if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
-    {
-        perror("setsockopt:");
-        exit(EXIT_FAILURE);
-    }
-
     return sfd;
 }
 
